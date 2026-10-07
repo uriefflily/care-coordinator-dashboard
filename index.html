@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Community care mental health referrals</title>
+<style>
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F7F8FA; --sel:#EBEEF3;
+  --ink:#1A2130; --ink-2:#465061; --ink-3:#5F6878;
+  --line:#DDE1E7; --line-2:#C5CBD4;
+  --alert:#B3261E; --alert-ink:#FFFFFF; --alert-bg:#FCEEED; --alert-line:#EFC3BF;
+  --bar:#7A8495; --bar-bg:#E6E9EE;
+  color-scheme:light;
+  --font:"Times New Roman", Times, "Liberation Serif", serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;min-width:1280px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Top bar */
+.top{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:15px;font-weight:600;margin:0;letter-spacing:-.005em}
+.top .who{color:var(--ink-2)}
+.top .spacer{flex:1}
+.demo{font-size:12px;color:var(--ink-2);border:1px solid var(--line-2);border-radius:3px;padding:2px 7px}
+.asof{color:var(--ink-3);font-size:12px}
+
+main{padding:16px 20px 32px;max-width:1680px;margin:0 auto}
+
+/* Attention strip */
+.attn{display:grid;grid-template-columns:auto 1fr;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.attn-head{padding:16px 24px 16px 20px;border-right:1px solid var(--line);display:flex;align-items:center;gap:14px;min-width:280px}
+.attn-num{font-size:56px;font-weight:600;line-height:.9;letter-spacing:-.04em;color:var(--alert)}
+.attn-num.zero{color:var(--ink-3)}
+.attn-text{font-size:15px;font-weight:600;line-height:1.25;max-width:12ch}
+.attn-text small{display:block;font-size:12px;font-weight:400;color:var(--ink-3);margin-top:4px;max-width:none}
+.counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.counter{appearance:none;background:none;border:0;border-right:1px solid var(--line);text-align:left;padding:14px 18px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.counter:last-child{border-right:0}
+.counter:hover{background:var(--surface-2)}
+.counter[aria-pressed="true"]{background:var(--sel);box-shadow:inset 0 -3px 0 var(--ink)}
+.counter .n{font-size:28px;font-weight:600;line-height:1;letter-spacing:-.02em}
+.counter.hot .n{color:var(--alert)}
+.counter .l{font-weight:600;color:var(--ink)}
+.counter .d{font-size:12px;color:var(--ink-3)}
+
+/* Layout */
+.grid{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(330px,1fr);gap:16px;margin-top:16px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0}
+.panel-h{display:flex;align-items:baseline;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel-h h2{font-size:14px;font-weight:600;margin:0}
+.panel-h .meta{color:var(--ink-3);font-size:12px}
+.panel-h .spacer{flex:1}
+.toolbar{display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center;background:var(--surface-2)}
+.toolbar input[type=search],.toolbar select{height:30px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);padding:0 8px}
+.toolbar input[type=search]{width:200px}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:4px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--surface);padding:0 10px;height:28px;cursor:pointer;border-right:1px solid var(--line-2);color:var(--ink-2)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);font-weight:600}
+.count-note{margin-left:auto;color:var(--ink-3);font-size:12px}
+
+/* Tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface);position:sticky;top:0;z-index:1}
+th button{appearance:none;background:none;border:0;padding:0;font-weight:600;color:inherit;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+th button .arr{width:8px;color:var(--ink-3)}
+th[aria-sort] button{color:var(--ink)}
+td.num,th.num{text-align:right}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--surface-2)}
+tbody tr.open td{background:var(--sel)}
+tbody tr.is-urgent td:first-child{box-shadow:inset 3px 0 0 var(--alert)}
+tbody tr.is-urgent td{background:var(--alert-bg)}
+tbody tr.is-urgent:hover td{background:var(--alert-bg);filter:brightness(.98)}
+.qtable .scroll{max-height:560px;overflow:auto}
+.vname{font-weight:600}
+.vid{color:var(--ink-3);font-size:12px;margin-left:6px}
+.muted{color:var(--ink-3)}
+.urg{display:inline-block;font-size:12px;font-weight:600;padding:1px 7px;border-radius:3px;min-width:74px;text-align:center}
+.urg-urgent{background:var(--alert);color:var(--alert-ink)}
+.urg-expedited{background:transparent;color:var(--alert);border:1px solid var(--alert-line)}
+.urg-routine{color:var(--ink-2);border:1px solid var(--line-2)}
+.over{color:var(--alert);font-weight:600}
+.status{font-size:12px;color:var(--ink-2)}
+.status::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;border:1.5px solid var(--ink-3)}
+.status.s-scheduling::before{background:var(--ink-3)}
+.flag{display:inline-block;font-size:11.5px;font-weight:600;color:var(--alert);background:var(--alert-bg);border:1px solid var(--alert-line);border-radius:3px;padding:0 5px;margin-right:4px}
+.empty{padding:28px 20px;color:var(--ink-2);text-align:center}
+.empty strong{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+.empty p{margin:0 auto;max-width:46ch}
+.empty .btn{margin-top:10px}
+.empty.inline{padding:12px 14px;text-align:left;border:1px dashed var(--line-2);border-radius:4px}
+.empty.inline p{margin:0;max-width:none}
+.empty.inline .btn{margin-top:8px}
+
+/* Alerts list */
+.atabs{display:flex;gap:0;border-bottom:1px solid var(--line);overflow-x:auto}
+.atabs button{appearance:none;border:0;background:none;padding:9px 12px;cursor:pointer;color:var(--ink-2);border-bottom:2px solid transparent;white-space:nowrap}
+.atabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.atabs .c{color:var(--ink-3);margin-left:4px;font-weight:400}
+.alist{list-style:none;margin:0;padding:0;max-height:572px;overflow:auto}
+.alist li{border-bottom:1px solid var(--line)}
+.alist button{appearance:none;background:none;border:0;width:100%;text-align:left;padding:9px 14px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.alist button:hover{background:var(--surface-2)}
+.alist .an{font-weight:600}
+.alist .ap{color:var(--ink-3);font-size:12px;text-align:right}
+.alist .reasons{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.alist .sev{grid-column:1/-1;font-size:12px;color:var(--ink-2)}
+
+/* Providers */
+.prov{margin-top:16px}
+.meter{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.track{position:relative;width:120px;height:8px;background:var(--bar-bg);border-radius:2px}
+.fill{position:absolute;left:0;top:0;bottom:0;background:var(--bar);border-radius:2px}
+.fill.hot{background:var(--alert)}
+.std{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.intake{font-size:12px;font-weight:600}
+.intake.closed{color:var(--alert)}
+.intake.wait{color:var(--ink-2)}
+.legend{font-size:12px;color:var(--ink-3);padding:8px 14px}
+.legend i{display:inline-block;width:2px;height:10px;background:var(--ink);vertical-align:-1px;margin:0 4px}
+.spec{color:var(--ink-2);font-size:12px}
+
+/* Drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,14,20,.35);z-index:20;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;background:var(--surface);border-left:1px solid var(--line-2);z-index:21;
+  display:none;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer.on{display:flex}
+/* The only animation in the product: fade in on mount */
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.fade-in{animation:fade-in .2s ease-out both}
+@media (prefers-reduced-motion: reduce){.fade-in{animation:none}}
+.dh{padding:14px 18px 12px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+.dh h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.dh .sub{color:var(--ink-2);font-size:12.5px;margin-top:2px}
+.dh .close{margin-left:auto;appearance:none;border:1px solid var(--line-2);background:var(--surface);border-radius:4px;width:32px;height:32px;cursor:pointer;font-size:18px;line-height:1}
+.db{overflow:auto;padding:0 18px 24px;flex:1}
+.dalert{margin-top:14px;border:1px solid var(--alert-line);background:var(--alert-bg);border-radius:4px;padding:9px 12px}
+.dalert strong{color:var(--alert)}
+.dalert ul{margin:4px 0 0;padding-left:18px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:4px;margin-top:14px}
+.fact{padding:9px 12px;border-right:1px solid var(--line)}
+.fact:last-child{border-right:0}
+.fact .k{font-size:12px;color:var(--ink-3)}
+.fact .v{font-weight:600;margin-top:2px;white-space:normal}
+.fact .v2{font-size:12px;color:var(--ink-2)}
+.sect{margin-top:20px}
+.sect h3{font-size:13px;font-weight:600;margin:0 0 6px;display:flex;align-items:baseline;gap:8px}
+.sect h3 .meta{font-weight:400;color:var(--ink-3);font-size:12px}
+.mini td,.mini th{padding:5px 8px;font-size:12.5px}
+.mini tbody tr{cursor:default}
+.mini tbody tr:hover td{background:none}
+.appt-missed{color:var(--alert);font-weight:600}
+.timeline{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);margin-left:5px}
+.timeline li{position:relative;padding:0 0 12px 16px}
+.timeline li::before{content:"";position:absolute;left:-6px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--ink-3)}
+.timeline li.contact::before{background:var(--ink-3)}
+.timeline li.miss::before{border-color:var(--alert);background:var(--alert)}
+.timeline .tm{font-size:12px;color:var(--ink-3)}
+.timeline .tt{margin-top:1px}
+.form{border:1px solid var(--line);border-radius:4px;padding:10px;background:var(--surface-2);display:grid;gap:8px}
+.form textarea{width:100%;min-height:64px;border:1px solid var(--line-2);border-radius:4px;padding:6px 8px;background:var(--surface);resize:vertical}
+.form .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.form select{height:30px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);padding:0 6px;max-width:100%}
+.btn{appearance:none;height:30px;padding:0 12px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:var(--surface);font-weight:600;cursor:pointer}
+.btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:4px;font-weight:600;z-index:30;pointer-events:none;display:none}
+.toast.on{display:block}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Community care mental health referrals</h1>
+  <span class="who">R. Alvarez, RN, care coordinator, East Bay team</span>
+  <span class="spacer"></span>
+  <span class="asof" id="asof"></span>
+  <span class="demo">Fictional demo data, no real veterans</span>
+</header>
+
+<main>
+  <section class="attn fade-in" aria-labelledby="attn-title">
+    <div class="attn-head">
+      <div class="attn-num" id="attnNum">0</div>
+      <div class="attn-text" id="attn-title">veterans need action today<small id="attnSub"></small></div>
+    </div>
+    <div class="counters" role="group" aria-label="Filter by issue">
+      <button class="counter" data-f="urgent" aria-pressed="false"><span class="n" id="cUrgent">0</span><span class="l">Urgent referrals unscheduled</span><span class="d">Target: scheduled within 2 days</span></button>
+      <button class="counter" data-f="nocontact" aria-pressed="false"><span class="n" id="cNoContact">0</span><span class="l">No contact in 14+ days</span><span class="d">Last successful contact</span></button>
+      <button class="counter" data-f="missed" aria-pressed="false"><span class="n" id="cMissed">0</span><span class="l">Missed 2+ appointments</span><span class="d">In the last 90 days</span></button>
+      <button class="counter" data-f="auth" aria-pressed="false"><span class="n" id="cAuth">0</span><span class="l">Authorization ends in ≤10 days</span><span class="d">Includes lapsed</span></button>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="panel fade-in qtable" aria-labelledby="qtitle">
+      <div class="panel-h"><h2 id="qtitle">Referral queue</h2><span class="meta" id="qmeta"></span></div>
+      <div class="toolbar">
+        <label class="sr" for="q">Search referrals</label>
+        <input type="search" id="q" placeholder="Search name or ID">
+        <label class="sr" for="typeSel">Referral type</label>
+        <select id="typeSel"><option value="">All referral types</option></select>
+        <div class="seg" role="group" aria-label="Urgency">
+          <button data-u="" aria-pressed="true">All</button>
+          <button data-u="Urgent" aria-pressed="false">Urgent</button>
+          <button data-u="Expedited" aria-pressed="false">Expedited</button>
+          <button data-u="Routine" aria-pressed="false">Routine</button>
+        </div>
+        <span class="count-note" id="qcount"></span>
+      </div>
+      <div class="scroll tw">
+        <table>
+          <caption class="sr">Incoming referrals awaiting scheduling. Select a row to open the veteran's details.</caption>
+          <thead><tr>
+            <th data-k="urgency"><button>Urgency <span class="arr"></span></button></th>
+            <th data-k="name"><button>Veteran <span class="arr"></span></button></th>
+            <th data-k="type"><button>Referral type <span class="arr"></span></button></th>
+            <th>Status</th>
+            <th data-k="waiting" class="num"><button>Days waiting <span class="arr"></span></button></th>
+            <th>Proposed provider</th>
+            <th>Flags</th>
+          </tr></thead>
+          <tbody id="qbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel fade-in" aria-labelledby="atitle">
+      <div class="panel-h"><h2 id="atitle">Falling through the cracks</h2><span class="meta">All 150 veterans on your caseload</span></div>
+      <div class="atabs" role="tablist" aria-label="Alert type">
+        <button role="tab" data-a="all" aria-selected="true">All<span class="c" id="tAll"></span></button>
+        <button role="tab" data-a="nocontact" aria-selected="false">No contact<span class="c" id="tNo"></span></button>
+        <button role="tab" data-a="missed" aria-selected="false">Missed appts<span class="c" id="tMi"></span></button>
+        <button role="tab" data-a="auth" aria-selected="false">Auth expiring<span class="c" id="tAu"></span></button>
+      </div>
+      <ul class="alist" id="alist" role="tabpanel" aria-labelledby="atitle"></ul>
+    </section>
+  </div>
+
+  <section class="panel fade-in prov" aria-labelledby="ptitle">
+    <div class="panel-h"><h2 id="ptitle">Community provider capacity</h2><span class="meta">Network region 4, mental health. Sorted by open intake slots.</span></div>
+    <div class="tw">
+      <table>
+        <caption class="sr">Community providers with intake status, open slots, and average wait time</caption>
+        <thead><tr>
+          <th>Provider</th><th>Services</th><th>Intake</th>
+          <th class="num">Open intake slots, next 30 days</th>
+          <th class="num">Average wait to first appointment</th>
+          <th class="num">Your veterans</th>
+        </tr></thead>
+        <tbody id="pbody"></tbody>
+      </table>
+    </div>
+    <div class="legend">Wait bars are scaled to 40 days. The <i></i> mark is the 20-day community care access standard; waits beyond it are shown in red.</div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dName" aria-hidden="true"></aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- deterministic fake data ---------- */
+let seed = 20261007;
+const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+const pick = a => a[Math.floor(rnd() * a.length)];
+const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+const TODAY = new Date(2026, 9, 7);
+const DAY = 864e5;
+const ago = n => new Date(TODAY.getTime() - n * DAY);
+const daysSince = d => Math.round((TODAY - d) / DAY);
+const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const fmtY = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const TYPES = {
+  PTSD: "PTSD therapy (CPT/PE)", SUD: "Substance use, outpatient", DEP: "Depression and anxiety",
+  MST: "MST counseling", MED: "Psychiatric medication management", FAM: "Couples and family therapy", SLP: "Insomnia (CBT-I)"
+};
+const TYPE_KEYS = Object.keys(TYPES);
+const TYPE_W = ["PTSD","PTSD","PTSD","DEP","DEP","DEP","SUD","SUD","MED","MED","MST","FAM","SLP"];
+
+const PROVIDERS = [
+  { id:"p1", name:"Harbor Light Counseling", city:"Oakland", spec:["PTSD","DEP","MST"], open:9, wait:9, intake:"Accepting" },
+  { id:"p2", name:"Bayside Behavioral Health", city:"Richmond", spec:["SUD","DEP","MED"], open:6, wait:14, intake:"Accepting" },
+  { id:"p3", name:"Northgate Psychology Associates", city:"Berkeley", spec:["PTSD","SLP","DEP"], open:2, wait:23, intake:"Accepting" },
+  { id:"p4", name:"Diablo Valley Family Clinic", city:"Concord", spec:["FAM","DEP"], open:5, wait:11, intake:"Accepting" },
+  { id:"p5", name:"Eastshore Recovery Center", city:"San Leandro", spec:["SUD"], open:11, wait:6, intake:"Accepting" },
+  { id:"p6", name:"Mission Hills Psychiatry", city:"Fremont", spec:["MED","PTSD"], open:1, wait:27, intake:"Waitlist" },
+  { id:"p7", name:"Carquinez Trauma Institute", city:"Vallejo", spec:["PTSD","MST"], open:0, wait:34, intake:"Closed" },
+  { id:"p8", name:"Redwood Path Therapy", city:"Walnut Creek", spec:["DEP","SLP","FAM"], open:7, wait:8, intake:"Accepting" },
+  { id:"p9", name:"Hayward Veterans Wellness", city:"Hayward", spec:["PTSD","SUD","DEP"], open:4, wait:16, intake:"Accepting" },
+  { id:"p10", name:"Lakeview Mindful Care", city:"Oakland", spec:["DEP","MED","SLP"], open:3, wait:19, intake:"Accepting" }
+];
+const PMAP = Object.fromEntries(PROVIDERS.map(p => [p.id, p]));
+const provFor = t => { const m = PROVIDERS.filter(p => p.spec.includes(t) && p.intake !== "Closed"); return pick(m.length ? m : PROVIDERS); };
+
+const FIRST = ["Marcus","Dana","Luis","Tanya","Derek","Alicia","Ray","Keisha","Owen","Priya","Grant","Nadia","Curtis","Maribel","Tobias","Renee","Andre","Colleen","Hector","Joanne","Wesley","Lena","Damon","Sofia","Felix","Monique","Gary","Ingrid","Terrence","Yolanda","Brandon","Elena","Darnell","Hannah","Rafael","Cheryl","Isaac","Bianca","Lamar","Theresa","Jerome","Vanessa","Kendall","Rosalind","Emmett","Aisha"];
+const LAST = ["Okafor","Brennan","Delacroix","Whitfield","Navarro","Lindqvist","Abernathy","Castellano","Pruitt","Haddad","Marchetti","Oyelaran","Tran","Vasquez-Hale","Kowalczyk","Ridley","Sandoval","Thibodeaux","Achterberg","Quintero","Yamashiro","Ellison","Fairbanks","Gutierrez","Holloway","Iverson","Jaramillo","Kincaid","Lockhart","Mendoza","Nakashima","Ostrowski","Pemberton","Rasmussen","Stroud","Tolliver","Underhill","Valdez","Westbrook","Zamora","Bautista","Calloway","Dunmore","Escobedo"];
+const BRANCH = ["Army","Army","Army","Marine Corps","Marine Corps","Navy","Navy","Air Force","Air Force","Coast Guard","Army National Guard"];
+const ERAS = [["Post-9/11",26,50],["Post-9/11",26,50],["Post-9/11",26,50],["Gulf War",50,62],["Gulf War",50,62],["Vietnam era",72,80],["Post-Vietnam",58,68]];
+const REFERRERS = ["Dr. K. Osei, BHIP team A","Dr. M. Fenwick, BHIP team B","S. Park, LCSW, PCMHI","Dr. A. Ruiz, psychiatry","J. Bello, NP, ED follow-up","Dr. T. Lindgren, telehealth MH"];
+const PSTAFF = ["front desk","intake coordinator","clinician"];
+
+const names = new Set();
+function makeName(){ let n; do { n = pick(FIRST) + " " + pick(LAST); } while (names.has(n)); names.add(n); return n; }
+
+let idc = 40118;
+function base(){
+  const era = pick(ERAS);
+  return {
+    id: "V" + (idc += ri(7, 61)), name: makeName(), age: ri(era[1], era[2]), branch: pick(BRANCH), era: era[0],
+    phone: "(510) 555-01" + String(ri(0, 99)).padStart(2, "0"),
+    notes: [], appts: [], history: []
+  };
+}
+function note(v, d, author, text, kind){ v.notes.push({ date: d, author, text, kind: kind || "note" }); }
+function priorReferral(v){
+  if (rnd() < 0.3) v.history.push({ date: ago(ri(300, 900)), type: pick(TYPE_KEYS), urgency: "Routine", referrer: pick(REFERRERS), status: pick(["Completed, goals met","Closed, veteran declined","Completed, transferred to VA"]) });
+}
+
+function genQueue(urgency, opts){
+  const v = base(); v.queue = true; v.urgency = urgency; v.type = pick(TYPE_W);
+  const w = urgency === "Urgent" ? ri(0, 5) : urgency === "Expedited" ? ri(1, 12) : ri(2, 38);
+  v.refDate = ago(w); v.referrer = pick(REFERRERS);
+  v.status = (w <= 2 || rnd() < 0.35) ? "New" : "Scheduling";
+  if (v.status === "Scheduling") { v.provider = provFor(v.type).id; v.authExp = new Date(v.refDate.getTime() + 180 * DAY); v.authNo = "VA0" + ri(1000000, 9999999); }
+  note(v, v.refDate, v.referrer, "Referral placed for " + TYPES[v.type].toLowerCase() + ". " + (urgency === "Urgent" ? "Recent ED visit; safety plan updated. Needs first appointment within 48 hours." : urgency === "Expedited" ? "Symptoms worsening per PHQ-9 and PCL-5 scores." : "VA wait exceeds access standard; veteran elected community care."), "note");
+  if (opts && opts.stale) {
+    v.lastContact = v.refDate;
+    note(v, ago(Math.max(0, w - ri(4, 8))), "R. Alvarez, RN", "Outreach attempt, no answer. Left voicemail with callback number.", "attempt");
+  } else {
+    const c = ri(0, Math.min(w, 9)); v.lastContact = ago(c);
+    note(v, v.lastContact, "R. Alvarez, RN", pick(["Spoke with veteran, confirmed interest in community care and preferred times.","Intake call completed. Prefers evening appointments, can travel up to 25 miles.","Spoke with veteran, explained authorization and what to expect at first visit."]), "contact");
+  }
+  if (v.status === "Scheduling") note(v, ago(Math.max(0, Math.min(w, daysSince(v.lastContact)) - 1)), "Scheduling", "Sent referral packet to " + PMAP[v.provider].name + ". Awaiting appointment offer.", "note");
+  priorReferral(v);
+  return v;
+}
+
+function genActive(force){
+  const v = base(); v.queue = false; v.type = pick(TYPE_W); v.urgency = rnd() < 0.15 ? "Expedited" : "Routine";
+  v.provider = provFor(v.type).id; v.status = "In care"; v.referrer = pick(REFERRERS);
+  let authAgo = force === "auth" ? 180 - ri(-1, 9) : ri(25, 166);
+  const start = authAgo - ri(4, 9);
+  v.refDate = ago(authAgo + ri(2, 6)); v.authStart = ago(authAgo); v.authExp = new Date(v.authStart.getTime() + 180 * DAY);
+  v.authNo = "VA0" + ri(1000000, 9999999);
+  const freq = pick([7, 14, 14]);
+  const p = PMAP[v.provider];
+  note(v, v.refDate, v.referrer, "Referral placed for " + TYPES[v.type].toLowerCase() + ".", "note");
+  note(v, v.authStart, "Authorization", "Authorization approved for 180 days. " + (v.type === "PTSD" ? "12 sessions plus intake." : "Up to 20 visits."), "note");
+  const cutoff = force === "nocontact" ? ri(15, 34) : null;
+  let d = start;
+  while (d > 0) {
+    let s = rnd() < 0.03 ? "Missed" : rnd() < 0.05 ? "Cancelled by provider" : "Attended";
+    if (cutoff && d < cutoff) { if (rnd() < 0.5) s = "Missed"; else { d -= freq; continue; } }
+    v.appts.push({ date: ago(d), status: s, provider: v.provider });
+    d -= freq;
+  }
+  if (force === "missed") { v.appts.slice(-ri(2, 3)).forEach(a => a.status = "Missed"); }
+  v.appts[0] && (v.appts[0].first = true);
+  // upcoming
+  v.upcoming = [];
+  if (force !== "nocontact") {
+    const n1 = Math.max(1, -d || ri(1, 7));
+    v.upcoming.push({ date: ago(-n1), provider: v.provider, kind: "Therapy session" });
+    if (force !== "missed") v.upcoming.push({ date: ago(-(n1 + freq)), provider: v.provider, kind: "Therapy session" });
+  }
+  // notes from appointments
+  const firstAtt = v.appts.find(a => a.status === "Attended");
+  if (firstAtt) note(v, firstAtt.date, p.name + " " + pick(PSTAFF), "Intake completed. Treatment plan sent to VA.", "contact");
+  v.appts.filter(a => a.status === "Missed").forEach(a => note(v, a.date, p.name + " front desk", "Veteran did not attend appointment. No cancellation call.", "miss"));
+  // last contact
+  const lastAtt = [...v.appts].reverse().find(a => a.status === "Attended");
+  let lc = lastAtt ? daysSince(lastAtt.date) : start;
+  if (cutoff) {
+    lc = Math.max(cutoff, lastAtt ? daysSince(lastAtt.date) : cutoff);
+    note(v, ago(lc), "R. Alvarez, RN", "Check-in call. Veteran reported work schedule changes.", "contact");
+    note(v, ago(ri(3, 9)), "R. Alvarez, RN", "Outreach attempt, no answer. Left voicemail.", "attempt");
+  } else if (lc >= 14 || rnd() < 0.4) {
+    lc = Math.min(lc, ri(1, 11));
+    note(v, ago(lc), "R. Alvarez, RN", pick(["Monthly check-in. Veteran reports sessions are helping.","Spoke with veteran, confirmed transportation for upcoming visits.","Secure message reply: veteran asked about extending authorization.","Provider called with progress update; attendance consistent."]), "contact");
+  }
+  if (force === "missed") note(v, ago(ri(0, 3)), "R. Alvarez, RN", "Sent secure message after second no-show. Awaiting reply.", "attempt");
+  v.lastContact = ago(lc);
+  priorReferral(v);
+  return v;
+}
+
+const vets = [];
+const qPlan = [].concat(Array(6).fill("Urgent"), Array(10).fill("Expedited"), Array(22).fill("Routine"));
+qPlan.forEach((u, i) => vets.push(genQueue(u, { stale: u === "Routine" && i % 5 === 0 })));
+const aPlan = [].concat(Array(8).fill("auth"), Array(7).fill("missed"), Array(7).fill("nocontact"), Array(90).fill(null));
+aPlan.forEach(f => vets.push(genActive(f)));
+// shuffle active portion for natural ordering
+for (let i = vets.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [vets[i], vets[j]] = [vets[j], vets[i]]; }
+vets.forEach(v => { v.notes.sort((a, b) => b.date - a.date); v.history.unshift(null); });
+const VMAP = Object.fromEntries(vets.map(v => [v.id, v]));
+
+/* ---------- derived ---------- */
+const URANK = { Urgent: 0, Expedited: 1, Routine: 2 };
+const TARGET = { Urgent: 2, Expedited: 7, Routine: 20 };
+const waiting = v => daysSince(v.refDate);
+const missed90 = v => v.appts.filter(a => a.status === "Missed" && daysSince(a.date) <= 90).length;
+const authLeft = v => v.authExp ? Math.round((v.authExp - TODAY) / DAY) : null;
+function alertsOf(v){
+  const r = [];
+  const nc = daysSince(v.lastContact);
+  if (nc >= 14) r.push({ k: "nocontact", label: "No contact " + nc + "d", w: nc });
+  const m = missed90(v);
+  if (m >= 2) r.push({ k: "missed", label: "Missed " + m + " appts", w: 10 + m * 5 });
+  const al = authLeft(v);
+  if (!v.queue && al !== null && al <= 10) r.push({ k: "auth", label: al < 0 ? "Auth lapsed " + (-al) + "d ago" : al === 0 ? "Auth ends today" : "Auth ends in " + al + "d", w: 40 - al });
+  return r;
+}
+const urgentUnscheduled = () => vets.filter(v => v.queue && v.urgency === "Urgent");
+
+/* ---------- shared UI helpers ---------- */
+// The one motion in the product. Every component that appears uses this.
+function fadeIn(el){ el.classList.remove("fade-in"); void el.offsetWidth; el.classList.add("fade-in"); }
+// Every empty table, list and section goes through this, so each one says what happened and what to do next.
+function emptyState(title, body, action, inline){
+  return '<div class="empty fade-in' + (inline ? ' inline' : '') + '">' + (title ? '<strong>' + esc(title) + '</strong>' : '') + '<p>' + body + '</p>' +
+    (action ? '<button class="btn ghost" data-act="' + action.act + '"' + (action.id ? ' data-id="' + action.id + '"' : '') + '>' + esc(action.label) + '</button>' : '') + '</div>';
+}
+
+/* ---------- state ---------- */
+const state = { sort: { k: "urgency", dir: 1 }, q: "", type: "", urg: "", tab: "all", focus: null, openId: null, lastFocus: null };
+
+/* ---------- summary ---------- */
+function renderSummary(){
+  const uu = urgentUnscheduled();
+  const all = vets.map(v => ({ v, a: alertsOf(v) }));
+  const nc = all.filter(x => x.a.some(a => a.k === "nocontact")).length;
+  const mi = all.filter(x => x.a.some(a => a.k === "missed")).length;
+  const au = all.filter(x => x.a.some(a => a.k === "auth")).length;
+  const ids = new Set(uu.map(v => v.id)); all.forEach(x => x.a.length && ids.add(x.v.id));
+  const total = ids.size;
+  const n = document.getElementById("attnNum"); n.textContent = total; n.classList.toggle("zero", total === 0);
+  document.getElementById("attn-title").firstChild.nodeValue = total === 1 ? "veteran needs action today" : "veterans need action today";
+  document.getElementById("attnSub").textContent = "of " + vets.length + " on your caseload";
+  const set = (id, val) => { const el = document.getElementById(id); el.textContent = val; el.closest(".counter").classList.toggle("hot", val > 0); };
+  set("cUrgent", uu.length); set("cNoContact", nc); set("cMissed", mi); set("cAuth", au);
+  document.getElementById("tAll").textContent = all.filter(x => x.a.length).length;
+  document.getElementById("tNo").textContent = nc; document.getElementById("tMi").textContent = mi; document.getElementById("tAu").textContent = au;
+  document.querySelectorAll(".counter").forEach(b => b.setAttribute("aria-pressed", String(state.focus === b.dataset.f)));
+}
+
+/* ---------- queue ---------- */
+function renderQueue(){
+  let rows = vets.filter(v => v.queue);
+  document.getElementById("qmeta").textContent = rows.length + " awaiting scheduling, " + rows.filter(v => waiting(v) > TARGET[v.urgency]).length + " past target";
+  const q = state.q.trim().toLowerCase();
+  if (q) rows = rows.filter(v => v.name.toLowerCase().includes(q) || v.id.toLowerCase().includes(q));
+  if (state.type) rows = rows.filter(v => v.type === state.type);
+  if (state.urg) rows = rows.filter(v => v.urgency === state.urg);
+  const { k, dir } = state.sort;
+  const cmp = {
+    urgency: (a, b) => URANK[a.urgency] - URANK[b.urgency] || waiting(b) - waiting(a),
+    waiting: (a, b) => waiting(a) - waiting(b) || URANK[a.urgency] - URANK[b.urgency],
+    name: (a, b) => a.name.split(" ").pop().localeCompare(b.name.split(" ").pop()),
+    type: (a, b) => TYPES[a.type].localeCompare(TYPES[b.type]) || URANK[a.urgency] - URANK[b.urgency]
+  }[k];
+  rows.sort((a, b) => cmp(a, b) * dir);
+  document.getElementById("qcount").textContent = "Showing " + rows.length;
+  document.querySelectorAll("thead th[data-k]").forEach(th => {
+    const on = th.dataset.k === k;
+    if (on) th.setAttribute("aria-sort", dir === 1 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");
+    th.querySelector(".arr").textContent = on ? (dir === 1 ? "▲" : "▼") : "";
+  });
+  const tb = document.getElementById("qbody");
+  if (!rows.length) {
+    const inQueue = vets.filter(v => v.queue).length;
+    let html;
+    if (!inQueue) {
+      html = emptyState("The referral queue is clear", "Every referral has a scheduled appointment. New referrals from VA clinicians will appear here as they arrive. Meanwhile, work the follow-up list for veterans already in care.", { act: "show-alerts", label: "Review follow-up list" });
+    } else {
+      const parts = [];
+      if (state.urg) parts.push(state.urg.toLowerCase());
+      if (state.type) parts.push(TYPES[state.type].toLowerCase());
+      const what = (parts.length ? parts.join(" ") + " referrals" : "referrals") + (state.q.trim() ? ' matching "' + esc(state.q.trim()) + '"' : "");
+      html = emptyState("No " + what + " in the queue", "There are " + inQueue + " referrals waiting under other filters. Clear the filters to see the full queue sorted by urgency.", { act: "clear-filters", label: "Clear filters and show all " + inQueue });
+    }
+    tb.innerHTML = '<tr><td colspan="7" style="white-space:normal;cursor:default">' + html + '</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(v => {
+    const w = waiting(v), over = w > TARGET[v.urgency];
+    const fl = alertsOf(v).map(a => '<span class="flag">' + esc(a.label) + "</span>").join("");
+    return '<tr tabindex="0" data-id="' + v.id + '" class="' + (v.urgency === "Urgent" ? "is-urgent " : "") + (state.openId === v.id ? "open" : "") + '" aria-label="' + esc(v.name + ", " + v.urgency + ", waiting " + w + " days") + '">' +
+      '<td><span class="urg urg-' + v.urgency.toLowerCase() + '">' + v.urgency + "</span></td>" +
+      '<td><span class="vname">' + esc(v.name) + '</span><span class="vid">' + v.id + "</span></td>" +
+      "<td>" + TYPES[v.type] + "</td>" +
+      '<td><span class="status s-' + v.status.toLowerCase() + '">' + (v.status === "New" ? "New, no provider" : "Sent to provider") + "</span></td>" +
+      '<td class="num"><span class="' + (over ? "over" : "") + '" title="Target: ' + TARGET[v.urgency] + ' days">' + w + "</span></td>" +
+      "<td>" + (v.provider ? esc(PMAP[v.provider].name) : '<span class="muted">Not assigned</span>') + "</td>" +
+      "<td>" + (fl || '<span class="muted">None</span>') + "</td></tr>";
+  }).join("");
+}
+
+/* ---------- alerts ---------- */
+function renderAlerts(){
+  const tab = state.tab;
+  let list = vets.map(v => ({ v, a: alertsOf(v) })).filter(x => x.a.length && (tab === "all" || x.a.some(a => a.k === tab)));
+  list.forEach(x => x.score = x.a.reduce((s, a) => s + a.w, 0) + (x.a.length - 1) * 30);
+  list.sort((a, b) => b.score - a.score);
+  document.querySelectorAll(".atabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.a === tab)));
+  const ul = document.getElementById("alist");
+  if (!list.length) { ul.innerHTML = '<li>' + alertsEmpty(tab) + '</li>'; return; }
+  ul.innerHTML = list.map(x => {
+    const v = x.v, p = v.provider ? PMAP[v.provider].name : "No provider yet";
+    return '<li><button data-id="' + v.id + '"><span class="an">' + esc(v.name) + '<span class="vid">' + v.id + '</span></span><span class="ap">' + esc(p) + '</span>' +
+      '<span class="sev">' + TYPES[v.type] + ", last contact " + fmt(v.lastContact) + '</span>' +
+      '<span class="reasons">' + x.a.map(a => '<span class="flag">' + esc(a.label) + "</span>").join("") + "</span></button></li>";
+  }).join("");
+}
+
+function alertsEmpty(tab){
+  const care = vets.filter(v => !v.queue);
+  if (tab === "nocontact") {
+    const next = vets.filter(v => daysSince(v.lastContact) < 14).sort((a, b) => a.lastContact - b.lastContact)[0];
+    if (!next) return emptyState("Everyone has been reached in the last 14 days", "Keep logging contacts as they happen so this list stays accurate.");
+    const crosses = new Date(next.lastContact.getTime() + 14 * DAY);
+    return emptyState("Everyone has been reached in the last 14 days", esc(next.name) + " is next to cross the line, on " + fmt(crosses) + ". A quick check-in now keeps them off this list.", { act: "open", id: next.id, label: "Open " + next.name });
+  }
+  if (tab === "missed") {
+    const one = care.filter(v => missed90(v) === 1);
+    if (!one.length) return emptyState("No one has missed 2 or more appointments", "Attendance looks steady across your caseload. Missed visits reported by providers will show here.");
+    return emptyState("No one has missed 2 or more appointments", one.length + " veteran" + (one.length > 1 ? "s have" : " has") + " missed one visit in the last 90 days. Reaching out after a single no-show often prevents the second.", { act: "open", id: one[0].id, label: "Start with " + one[0].name });
+  }
+  if (tab === "auth") {
+    const next = care.filter(v => authLeft(v) > 10).sort((a, b) => a.authExp - b.authExp)[0];
+    if (!next) return emptyState("No authorizations end in the next 10 days", "Authorizations close to their end date will show here.");
+    return emptyState("No authorizations end in the next 10 days", "Next to expire: " + esc(next.name) + " on " + fmt(next.authExp) + " (" + authLeft(next) + " days). Extension requests take about a week, so starting early avoids a gap in care.", { act: "open", id: next.id, label: "Open " + next.name });
+  }
+  return emptyState("No one is falling through the cracks", "Every veteran has recent contact, steady attendance and a current authorization. Work the referral queue next.", { act: "show-queue", label: "Go to referral queue" });
+}
+
+/* ---------- providers ---------- */
+function renderProviders(){
+  const counts = {}; vets.forEach(v => { if (v.provider) counts[v.provider] = (counts[v.provider] || 0) + 1; });
+  const order = { Accepting: 0, Waitlist: 1, Closed: 2 };
+  const rows = [...PROVIDERS].sort((a, b) => order[a.intake] - order[b.intake] || b.open - a.open || a.wait - b.wait);
+  if (!rows.length) {
+    document.getElementById("pbody").innerHTML = '<tr><td colspan="6" style="white-space:normal;cursor:default">' + emptyState("No community providers on file for this region", "Referrals can't be routed until the provider list loads. Ask your community care network liaison to refresh the region 4 directory.") + '</td></tr>';
+    return;
+  }
+  const maxOpen = Math.max(1, ...PROVIDERS.map(p => p.open));
+  document.getElementById("pbody").innerHTML = rows.map(p => {
+    const over = p.wait > 20;
+    return '<tr style="cursor:default"><td><span class="vname">' + esc(p.name) + '</span><span class="vid">' + p.city + "</span></td>" +
+      '<td class="spec">' + p.spec.map(s => TYPES[s].split(" (")[0]).join(", ") + "</td>" +
+      '<td><span class="intake ' + (p.intake === "Closed" ? "closed" : p.intake === "Waitlist" ? "wait" : "") + '">' + (p.intake === "Accepting" ? "Accepting" : p.intake === "Waitlist" ? "Waitlist only" : "Not accepting") + "</span></td>" +
+      '<td class="num"><div class="meter"><span>' + p.open + '</span><span class="track" aria-hidden="true"><span class="fill" style="width:' + (p.open / maxOpen * 100) + '%"></span></span></div></td>' +
+      '<td class="num"><div class="meter"><span class="' + (over ? "over" : "") + '">' + p.wait + ' days</span><span class="track" aria-hidden="true"><span class="fill ' + (over ? "hot" : "") + '" style="width:' + Math.min(100, p.wait / 40 * 100) + '%"></span><span class="std" style="left:50%"></span></span></div></td>' +
+      '<td class="num">' + (counts[p.id] || 0) + "</td></tr>";
+  }).join("");
+}
+
+/* ---------- drawer ---------- */
+const drawer = document.getElementById("drawer"), scrim = document.getElementById("scrim");
+function openVet(id){
+  const v = VMAP[id]; if (!v) return;
+  const wasOpen = !!state.openId;
+  if (!wasOpen) state.lastFocus = document.activeElement;
+  state.openId = id;
+  const al = alertsOf(v), left = authLeft(v), p = v.provider ? PMAP[v.provider] : null;
+  const uuf = v.queue && v.urgency === "Urgent";
+  const reasons = al.map(a => a.k === "nocontact" ? "No successful contact since " + fmtY(v.lastContact) + " (" + daysSince(v.lastContact) + " days)."
+    : a.k === "missed" ? missed90(v) + " missed appointments in the last 90 days."
+    : left < 0 ? "Authorization lapsed on " + fmtY(v.authExp) + ". Request an extension before the next visit." : "Authorization ends " + fmtY(v.authExp) + ". Request an extension or plan discharge.");
+  if (uuf) reasons.unshift("Urgent referral waiting " + waiting(v) + " days without a scheduled appointment (target 2).");
+  const past = [...v.appts].reverse().slice(0, 8);
+  const hist = [{ date: v.refDate, type: v.type, urgency: v.urgency, referrer: v.referrer, status: v.queue ? (v.status === "New" ? "Open, awaiting provider" : "Open, sent to provider") : "Active, in care" }].concat(v.history.filter(Boolean));
+  const match = PROVIDERS.filter(x => x.spec.includes(v.type) && x.intake !== "Closed").sort((a, b) => a.wait - b.wait);
+  drawer.innerHTML =
+    '<div class="dh"><div><h2 id="dName">' + esc(v.name) + '</h2><div class="sub">' + v.id + ", " + v.age + " years, " + v.branch + ", " + v.era + ", " + v.phone + '</div></div><button class="close" id="dClose" aria-label="Close details">×</button></div>' +
+    '<div class="db">' +
+    (reasons.length ? '<div class="dalert" role="note"><strong>Needs attention</strong><ul>' + reasons.map(r => "<li>" + esc(r) + "</li>").join("") + "</ul></div>" : "") +
+    '<div class="facts">' +
+      '<div class="fact"><div class="k">Assigned provider</div><div class="v">' + (p ? esc(p.name) : "Not assigned") + '</div><div class="v2">' + (p ? p.city + ", avg wait " + p.wait + "d" : "Choose a provider below") + "</div></div>" +
+      '<div class="fact"><div class="k">Authorization</div><div class="v' + (left !== null && left <= 10 && !v.queue ? ' over' : '') + '">' + (v.authExp ? "Ends " + fmtY(v.authExp) : "Pending approval") + '</div><div class="v2">' + (v.authExp ? (left < 0 ? "Lapsed " + (-left) + " days ago" : left + " days left") + ", #" + v.authNo : "Submitted with referral") + "</div></div>" +
+      '<div class="fact"><div class="k">Last contact</div><div class="v' + (daysSince(v.lastContact) >= 14 ? ' over' : '') + '">' + fmtY(v.lastContact) + '</div><div class="v2">' + daysSince(v.lastContact) + " days ago</div></div>" +
+    "</div>" +
+    (v.queue ? '<div class="sect"><h3>' + (v.status === "New" ? "Assign a provider" : "Record scheduled appointment") + '</h3><div class="form"><div class="row">' +
+      (v.status === "New"
+        ? '<label class="sr" for="provPick">Provider</label><select id="provPick">' + match.map(x => '<option value="' + x.id + '">' + esc(x.name) + " (" + x.wait + "d wait, " + x.open + " open)</option>").join("") + '</select><button class="btn" id="assignBtn">Send referral to provider</button>'
+        : '<span>' + esc(p.name) + ' typically offers a first visit in about ' + p.wait + ' days.</span><button class="btn" id="schedBtn">Mark as scheduled</button>') +
+      "</div></div></div>" : "") +
+    '<div class="sect"><h3>Upcoming appointments</h3>' + ((v.upcoming && v.upcoming.length) ? '<table class="mini"><tbody>' + v.upcoming.map(a => "<tr><td>" + fmtY(a.date) + "</td><td>" + a.kind + "</td><td>" + esc(PMAP[a.provider].name) + "</td></tr>").join("") + "</tbody></table>"
+      : v.queue ? emptyState("", v.status === "New" ? "No appointment yet. Send the referral to a provider above to start scheduling." : "Waiting on an appointment offer from " + esc(p.name) + ". When they confirm a date, mark it as scheduled above.", null, true)
+      : emptyState("", "Nothing on the calendar. Call " + esc(p.name) + " to book the next session, then log the call below.", { act: "prep-log", label: "Log a provider call" }, true)) + "</div>" +
+    (v.queue ? "" : '<div class="sect"><h3>Past appointments <span class="meta">' + v.appts.length + " total, " + v.appts.filter(a => a.status === "Missed").length + " missed</span></h3>" +
+      (past.length ? '<table class="mini"><thead><tr><th>Date</th><th>Visit</th><th>Result</th></tr></thead><tbody>' + past.map(a => "<tr><td>" + fmtY(a.date) + "</td><td>" + (a.first ? "Intake" : "Therapy session") + '</td><td class="' + (a.status === "Missed" ? "appt-missed" : "") + '">' + (a.status === "Missed" ? "Missed, no-show" : a.status) + "</td></tr>").join("") + "</tbody></table>" : emptyState("", "No visits yet. The intake visit will appear here once the provider reports it.", null, true)) + "</div>") +
+    '<div class="sect"><h3>Referral history</h3><table class="mini"><thead><tr><th>Referred</th><th>Type</th><th>Urgency</th><th>Status</th></tr></thead><tbody>' +
+      hist.map(h => "<tr><td>" + fmtY(h.date) + "</td><td>" + TYPES[h.type] + "</td><td>" + h.urgency + "</td><td>" + esc(h.status) + "</td></tr>").join("") + "</tbody></table>" +
+      '<div class="muted" style="margin-top:4px">Current referral by ' + esc(v.referrer) + ".</div></div>" +
+    '<div class="sect"><h3>Log contact</h3><div class="form"><label class="sr" for="nText">Note</label><textarea id="nText" placeholder="What was discussed or attempted"></textarea><div class="row">' +
+      '<label class="sr" for="nKind">Contact type</label><select id="nKind"><option value="contact">Reached veteran by phone</option><option value="contact">Secure message reply from veteran</option><option value="contact" data-provider>Spoke with provider</option><option value="attempt">Attempted, no answer</option></select>' +
+      '<button class="btn" id="logBtn">Log contact</button></div></div></div>' +
+    '<div class="sect"><h3>Notes <span class="meta">Newest first</span></h3>' + (v.notes.length ? '<ul class="timeline">' + v.notes.map(n => '<li class="' + (n.kind === "contact" ? "contact" : n.kind === "miss" ? "miss" : "") + '"><div class="tm">' + fmtY(n.date) + ", " + esc(n.author) + (n.kind === "attempt" ? ", unsuccessful" : "") + '</div><div class="tt">' + esc(n.text) + "</div></li>").join("") + "</ul>" : emptyState("", "No notes yet. Log the first contact above to start this veteran's timeline.", null, true)) + "</div>" +
+    "</div>";
+  drawer.classList.add("on"); scrim.classList.add("on"); drawer.setAttribute("aria-hidden", "false");
+  if (!wasOpen) { fadeIn(drawer); fadeIn(scrim); }
+  document.getElementById("dClose").focus();
+  document.querySelectorAll("#qbody tr").forEach(tr => tr.classList.toggle("open", tr.dataset.id === id));
+}
+function closeVet(){
+  drawer.classList.remove("on"); scrim.classList.remove("on"); drawer.setAttribute("aria-hidden", "true");
+  state.openId = null; document.querySelectorAll("#qbody tr.open").forEach(tr => tr.classList.remove("open"));
+  if (state.lastFocus && document.body.contains(state.lastFocus)) state.lastFocus.focus();
+}
+function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("on"); fadeIn(t); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2400); }
+function refresh(){ renderSummary(); renderQueue(); renderAlerts(); renderProviders(); }
+
+drawer.addEventListener("click", e => {
+  const v = VMAP[state.openId]; if (!v) return;
+  if (e.target.id === "dClose") return closeVet();
+  if (e.target.dataset.act === "prep-log") {
+    const sel = document.getElementById("nKind"); sel.selectedIndex = [...sel.options].findIndex(o => o.hasAttribute("data-provider"));
+    const ta = document.getElementById("nText"); ta.focus(); ta.scrollIntoView({ block: "center" }); return;
+  }
+  if (e.target.id === "logBtn") {
+    const txt = document.getElementById("nText").value.trim();
+    const sel = document.getElementById("nKind"); const kind = sel.value; const label = sel.options[sel.selectedIndex].text;
+    v.notes.unshift({ date: TODAY, author: "R. Alvarez, RN", text: label + "." + (txt ? " " + txt : ""), kind });
+    if (kind === "contact") v.lastContact = TODAY;
+    refresh(); openVet(v.id); toast(kind === "contact" ? "Contact logged for " + v.name : "Attempt logged for " + v.name);
+  }
+  if (e.target.id === "assignBtn") {
+    const pid = document.getElementById("provPick").value; if (!pid) return;
+    v.provider = pid; v.status = "Scheduling"; v.authNo = "VA0" + ri(1000000, 9999999); v.authExp = new Date(TODAY.getTime() + 180 * DAY);
+    v.notes.unshift({ date: TODAY, author: "R. Alvarez, RN", text: "Sent referral packet to " + PMAP[pid].name + ".", kind: "note" });
+    refresh(); openVet(v.id); toast("Referral sent to " + PMAP[pid].name);
+  }
+  if (e.target.id === "schedBtn") {
+    const p = PMAP[v.provider];
+    v.queue = false; v.status = "In care"; v.upcoming = [{ date: new Date(TODAY.getTime() + p.wait * DAY), provider: p.id, kind: "Intake" }];
+    v.authStart = TODAY; v.authExp = new Date(TODAY.getTime() + 180 * DAY);
+    v.notes.unshift({ date: TODAY, author: "R. Alvarez, RN", text: "Intake scheduled with " + p.name + " for " + fmtY(v.upcoming[0].date) + ".", kind: "note" });
+    refresh(); openVet(v.id); toast("Marked as scheduled. " + v.name + " left the queue.");
+  }
+});
+scrim.addEventListener("click", closeVet);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && state.openId) closeVet();
+  if (e.key === "Tab" && state.openId) {
+    const f = drawer.querySelectorAll("button, select, textarea, input");
+    if (!f.length) return; const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+/* ---------- wiring ---------- */
+document.getElementById("asof").textContent = "As of " + TODAY.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+const ts = document.getElementById("typeSel");
+TYPE_KEYS.forEach(k => ts.insertAdjacentHTML("beforeend", '<option value="' + k + '">' + TYPES[k] + "</option>"));
+ts.addEventListener("change", () => { state.type = ts.value; renderQueue(); });
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; renderQueue(); });
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  state.urg = b.dataset.u; document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); renderQueue();
+}));
+document.querySelectorAll("thead th[data-k] button").forEach(b => b.addEventListener("click", () => {
+  const k = b.closest("th").dataset.k;
+  if (state.sort.k === k) state.sort.dir *= -1; else state.sort = { k, dir: k === "waiting" ? -1 : 1 };
+  renderQueue();
+}));
+const qbody = document.getElementById("qbody");
+qbody.addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-id]"); if (tr) openVet(tr.dataset.id);
+});
+qbody.addEventListener("keydown", e => {
+  const tr = e.target.closest("tr[data-id]"); if (!tr) return;
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openVet(tr.dataset.id); }
+  if (e.key === "ArrowDown" && tr.nextElementSibling) { e.preventDefault(); tr.nextElementSibling.focus(); }
+  if (e.key === "ArrowUp" && tr.previousElementSibling) { e.preventDefault(); tr.previousElementSibling.focus(); }
+});
+document.getElementById("alist").addEventListener("click", e => { const b = e.target.closest("button[data-id]:not([data-act])"); if (b) openVet(b.dataset.id); });
+document.querySelector("main").addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act;
+  if (act === "clear-filters") {
+    state.q = ""; state.type = ""; state.urg = ""; state.focus = null;
+    document.getElementById("q").value = ""; ts.value = "";
+    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.u === "")));
+    renderQueue(); renderSummary(); document.getElementById("q").focus();
+  }
+  if (act === "open") openVet(b.dataset.id);
+  if (act === "show-alerts") { state.tab = "all"; state.focus = null; renderAlerts(); renderSummary(); document.getElementById("atitle").scrollIntoView({ block: "nearest" }); }
+  if (act === "show-queue") { const r = document.querySelector("#qbody tr[data-id]"); document.getElementById("qtitle").scrollIntoView({ block: "nearest" }); if (r) r.focus(); }
+});
+document.querySelectorAll(".atabs button").forEach(b => b.addEventListener("click", () => { state.tab = b.dataset.a; state.focus = b.dataset.a === "all" ? null : b.dataset.a; renderSummary(); renderAlerts(); }));
+document.querySelectorAll(".counter").forEach(b => b.addEventListener("click", () => {
+  const f = b.dataset.f;
+  state.focus = state.focus === f ? null : f;
+  if (f === "urgent") {
+    state.urg = state.focus ? "Urgent" : ""; state.sort = { k: "urgency", dir: 1 };
+    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.u === state.urg)));
+    renderQueue(); document.getElementById("qtitle").scrollIntoView({ block: "nearest" });
+  } else {
+    state.tab = state.focus ? f : "all"; renderAlerts(); document.getElementById("atitle").scrollIntoView({ block: "nearest" });
+  }
+  renderSummary();
+}));
+refresh();
+})();
+</script>
+</body>
+</html>
